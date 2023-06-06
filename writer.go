@@ -47,7 +47,7 @@ func (x *Xqml) writeMap(value map[string]any, parent string) error {
 		} else if sk == "#text" {
 			text = v
 		} else {
-			elems = append(attrs, &tag{sk, v})
+			elems = append(elems, &tag{sk, v})
 		}
 	}
 	// remove root unexpected values
