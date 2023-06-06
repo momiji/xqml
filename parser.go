@@ -39,8 +39,10 @@ func (x *Xqml) parse(curr *elem, parent *elem, cast bool) error {
 			path := newPath(curr.path, name)
 			item := &elem{data, name, path, false}
 			// add attributes
-			for _, attr := range e.Attr {
-				data["@"+newName(x.namespace, &attr.Name)] = attr.Value
+			if x.attributes {
+				for _, attr := range e.Attr {
+					data["@"+newName(x.namespace, &attr.Name)] = attr.Value
+				}
 			}
 			// upgrade parent if it is a value
 			if curr.isValue {
@@ -114,7 +116,11 @@ func (x *Xqml) setText(curr *elem, parent *elem, value any) {
 	}
 	// set value
 	if text, ok := curr.data["#text"]; ok {
-		value = fmt.Sprintf("%v%v", text, value)
+		sep := ""
+		if x.html {
+			sep = " "
+		}
+		value = fmt.Sprintf("%v%s%v", text, sep, value)
 	}
 	curr.data["#text"] = value
 }

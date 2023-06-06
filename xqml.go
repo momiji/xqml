@@ -13,26 +13,36 @@ const (
 )
 
 type Xqml struct {
-	namespace bool
-	forceList map[string]bool
-	indent    string
-	root      string
-	element   string
-	encoder   *xml.Encoder
-	decoder   *xml.Decoder
-	partial   bool
-	done      bool
+	attributes bool
+	namespace  bool
+	forceList  map[string]bool
+	html       bool
+	indent     string
+	root       string
+	element    string
+	encoder    *xml.Encoder
+	decoder    *xml.Decoder
+	partial    bool
+	done       bool
 }
 
 func NewXQML() *Xqml {
 	return &Xqml{
-		namespace: true,
-		forceList: nil,
-		indent:    "",
-		root:      DefaultRootTag,
-		element:   DefaultElementTag,
-		done:      false,
+		attributes: true,
+		namespace:  true,
+		forceList:  nil,
+		html:       false,
+		indent:     "",
+		root:       DefaultRootTag,
+		element:    DefaultElementTag,
+		done:       false,
 	}
+}
+
+// Attributes allows to keep attributes.
+// Default is to keep attributes, use Attributes(false) to remove them.
+func (x *Xqml) Attributes(b bool) {
+	x.attributes = b
 }
 
 // Namespace allows to keep namespaces.
@@ -51,6 +61,12 @@ func (x *Xqml) ForceList(s ...string) {
 			x.forceList[b] = true
 		}
 	}
+}
+
+// Html allows to manage HTML content, by auto-closing known HTML tags.
+// Default is to not manage HTML content.
+func (x *Xqml) Html(b bool) {
+	x.html = b
 }
 
 // Root allows to set default element tag name in <root>...</root>.
@@ -90,8 +106,10 @@ func (x *Xqml) ParseXml(reader io.Reader, cast bool) (map[string]any, error) {
 	if x.decoder == nil {
 		decoder := xml.NewDecoder(reader)
 		decoder.Strict = false
-		//decoder.AutoClose = xml.HTMLAutoClose
 		decoder.Entity = xml.HTMLEntity
+		if x.html {
+			decoder.AutoClose = xml.HTMLAutoClose
+		}
 		x.decoder = decoder
 	}
 	root := make(map[string]any)

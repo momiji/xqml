@@ -9,51 +9,55 @@ import (
 
 func Test_Parse(t *testing.T) {
 	// empty
-	testParse(t, "", "{}", "", false, nil)
+	testParse(t, "", "{}", "", true, false, nil, false)
 	// root simple
-	testParse(t, `<r>1</r>`, `{"r":1}`, "", false, nil)
-	testParse(t, `<r>1</r>`, `{"r":1}`, "", true, nil)
-	testParse(t, `<n:r>1</n:r>`, `{"n:r":1}`, "", true, nil)
+	testParse(t, `<r>1</r>`, `{"r":1}`, "", true, false, nil, false)
+	testParse(t, `<r>1</r>`, `{"r":1}`, "", true, true, nil, false)
+	testParse(t, `<n:r>1</n:r>`, `{"n:r":1}`, "", true, true, nil, false)
 	// root attributes
-	testParse(t, `<r x="1">1</r>`, `{"r":{"#text":1,"@x":"1"}}`, "", false, nil)
+	testParse(t, `<r x="1">1</r>`, `{"r":{"#text":1,"@x":"1"}}`, "", true, false, nil, false)
 	// level2 simple
-	testParse(t, `<r><e>1</e></r>`, `{"r":{"e":1}}`, "", false, nil)
+	testParse(t, `<r><e>1</e></r>`, `{"r":{"e":1}}`, "", true, false, nil, false)
 	// mixed #text
-	testParse(t, `<r>y<e>1</e>x</r>`, `{"r":{"#text":"yx","e":1}}`, `<r>yx<e>1</e></r>`, false, nil)
+	testParse(t, `<r>y<e>1</e>x</r>`, `{"r":{"#text":"yx","e":1}}`, `<r>yx<e>1</e></r>`, true, false, nil, false)
 	// bool
-	testParse(t, `<r><e>true</e></r>`, `{"r":{"e":true}}`, "", false, nil)
-	testParse(t, `<r><e>True</e></r>`, `{"r":{"e":true}}`, `<r><e>true</e></r>`, false, nil)
-	testParse(t, `<r><e>false</e></r>`, `{"r":{"e":false}}`, "", false, nil)
-	testParse(t, `<r><e>False</e></r>`, `{"r":{"e":false}}`, `<r><e>false</e></r>`, false, nil)
+	testParse(t, `<r><e>true</e></r>`, `{"r":{"e":true}}`, "", true, false, nil, false)
+	testParse(t, `<r><e>True</e></r>`, `{"r":{"e":true}}`, `<r><e>true</e></r>`, true, false, nil, false)
+	testParse(t, `<r><e>false</e></r>`, `{"r":{"e":false}}`, "", true, false, nil, false)
+	testParse(t, `<r><e>False</e></r>`, `{"r":{"e":false}}`, `<r><e>false</e></r>`, true, false, nil, false)
 	// invalid bool
-	testParse(t, `<r><e>TRUE</e></r>`, `{"r":{"e":"TRUE"}}`, "", false, nil)
-	testParse(t, `<r><e>FALSE</e></r>`, `{"r":{"e":"FALSE"}}`, "", false, nil)
+	testParse(t, `<r><e>TRUE</e></r>`, `{"r":{"e":"TRUE"}}`, "", true, false, nil, false)
+	testParse(t, `<r><e>FALSE</e></r>`, `{"r":{"e":"FALSE"}}`, "", true, false, nil, false)
 	// mixed bool
-	testParse(t, `<r>true<e>1</e></r>`, `{"r":{"#text":true,"e":1}}`, "", false, nil)
-	testParse(t, `<r>true<e>1</e>y</r>`, `{"r":{"#text":"truey","e":1}}`, `<r>truey<e>1</e></r>`, false, nil)
+	testParse(t, `<r>true<e>1</e></r>`, `{"r":{"#text":true,"e":1}}`, "", true, false, nil, false)
+	testParse(t, `<r>true<e>1</e>y</r>`, `{"r":{"#text":"truey","e":1}}`, `<r>truey<e>1</e></r>`, true, false, nil, false)
 	// xml declaration
-	testParse(t, `<?xml version="1.0"?><r>1</r>`, `{"r":1}`, `<r>1</r>`, false, nil)
+	testParse(t, `<?xml version="1.0"?><r>1</r>`, `{"r":1}`, `<r>1</r>`, true, false, nil, false)
 	// array
-	testParse(t, `<r><e>1</e><e>2</e></r>`, `{"r":{"e":[1,2]}}`, "", false, nil)
-	testParse(t, `<r>y<e>1</e><e>2</e>x</r>`, `{"r":{"#text":"yx","e":[1,2]}}`, `<r>yx<e>1</e><e>2</e></r>`, false, nil)
+	testParse(t, `<r><e>1</e><e>2</e></r>`, `{"r":{"e":[1,2]}}`, "", true, false, nil, false)
+	testParse(t, `<r>y<e>1</e><e>2</e>x</r>`, `{"r":{"#text":"yx","e":[1,2]}}`, `<r>yx<e>1</e><e>2</e></r>`, true, false, nil, false)
 	// force list
-	testParse(t, `<r><e>1</e></r>`, `{"r":{"e":[1]}}`, "", false, []string{"e"})
-	testParse(t, `<r><e>1</e></r>`, `{"r":{"e":[1]}}`, "", false, []string{"r.e"})
+	testParse(t, `<r><e>1</e></r>`, `{"r":{"e":[1]}}`, "", true, false, []string{"e"}, false)
+	testParse(t, `<r><e>1</e></r>`, `{"r":{"e":[1]}}`, "", true, false, []string{"r.e"}, false)
 	// null
-	testParse(t, `<r><e></e></r>`, `{"r":{"e":null}}`, "", false, nil)
-	testParse(t, `<r><e></e><e>1</e></r>`, `{"r":{"e":[null,1]}}`, "", false, nil)
-	testParse(t, `<r><e x="2"></e><e>1</e></r>`, `{"r":{"e":[{"@x":"2"},1]}}`, "", false, nil)
-	testParse(t, `<r><e></e><e x="3">1</e></r>`, `{"r":{"e":[null,{"#text":1,"@x":"3"}]}}`, "", false, nil)
-	testParse(t, `<r><e x="2"></e><e x="3">1</e></r>`, `{"r":{"e":[{"@x":"2"},{"#text":1,"@x":"3"}]}}`, "", false, nil)
+	testParse(t, `<r><e></e></r>`, `{"r":{"e":null}}`, "", true, false, nil, false)
+	testParse(t, `<r><e></e><e>1</e></r>`, `{"r":{"e":[null,1]}}`, "", true, false, nil, false)
+	testParse(t, `<r><e x="2"></e><e>1</e></r>`, `{"r":{"e":[{"@x":"2"},1]}}`, "", true, false, nil, false)
+	testParse(t, `<r><e></e><e x="3">1</e></r>`, `{"r":{"e":[null,{"#text":1,"@x":"3"}]}}`, "", true, false, nil, false)
+	testParse(t, `<r><e x="2"></e><e x="3">1</e></r>`, `{"r":{"e":[{"@x":"2"},{"#text":1,"@x":"3"}]}}`, "", true, false, nil, false)
 	// cr
-	testParse(t, `<r>1</r>\n`, `{"r":1}`, `<r>1</r>`, false, nil)
-	testParse(t, `<r>1</r>\n   \n   `, `{"r":1}`, `<r>1</r>`, false, nil)
+	testParse(t, `<r>1</r>\n`, `{"r":1}`, `<r>1</r>`, true, false, nil, false)
+	testParse(t, `<r>1</r>\n   \n   `, `{"r":1}`, `<r>1</r>`, true, false, nil, false)
+	// html
+	testParse(t, `<r><e>1<br>2</e></r>`, `{"r":{"e":{"#text":"1 2","br":null}}}`, `<r><e>1 2<br></br></e></r>`, true, false, nil, true)
 }
 
-func testParse(t *testing.T, src string, rjson string, rxml string, keepNs bool, forceList []string) {
+func testParse(t *testing.T, src string, rjson string, rxml string, keepAttrs bool, keepNs bool, forceList []string, html bool) {
 	x := NewXQML()
+	x.Attributes(keepAttrs)
 	x.Namespace(keepNs)
 	x.ForceList(forceList...)
+	x.Html(html)
 	//
 	fmt.Printf("XML => JSON: %s => %s\n", src, rjson)
 	src = strings.ReplaceAll(src, "\\n", "\n")
