@@ -56,7 +56,7 @@ func Test_Parse(t *testing.T) {
 func testParse(t *testing.T, src string, rjson string, rxml string, keepAttrs bool, keepNs bool, forceList []string, html bool) {
 	x := NewXQML()
 	x.SetReadAttributes(keepAttrs)
-	x.SetReadNamespace(keepNs)
+	x.SetReadNamespaces(keepNs)
 	x.SetReadForceList(forceList...)
 	x.SetReadHtml(html)
 	//

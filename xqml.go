@@ -14,7 +14,7 @@ const (
 
 type Xqml struct {
 	attributes bool
-	namespace  bool
+	namespaces bool
 	forceList  map[string]bool
 	html       bool
 	indent     string
@@ -29,7 +29,7 @@ type Xqml struct {
 func NewXQML() *Xqml {
 	return &Xqml{
 		attributes: true,
-		namespace:  true,
+		namespaces: true,
 		forceList:  nil,
 		html:       false,
 		indent:     "",
@@ -45,10 +45,10 @@ func (x *Xqml) SetReadAttributes(b bool) {
 	x.attributes = b
 }
 
-// SetReadNamespace allows to keep namespaces.
-// Default is to keep namespaces, use SetReadNamespace(false) to remove them.
-func (x *Xqml) SetReadNamespace(b bool) {
-	x.namespace = b
+// SetReadNamespaces allows to keep namespaces.
+// Default is to keep namespaces, use SetReadNamespaces(false) to remove them.
+func (x *Xqml) SetReadNamespaces(b bool) {
+	x.namespaces = b
 }
 
 // SetReadForceList allows to ensure some elements are parsed as slice, even when only one element is present.

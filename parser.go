@@ -36,7 +36,7 @@ func (x *Xqml) parse(curr *elem, parent *elem, cast bool) error {
 			}
 			// create new element
 			var data map[string]any
-			name := newName(x.namespace, &e.Name)
+			name := newName(x.namespaces, &e.Name)
 			path := newPath(curr.path, name)
 			item := &elem{data, name, path, false, true}
 			// read attributes
@@ -47,7 +47,7 @@ func (x *Xqml) parse(curr *elem, parent *elem, cast bool) error {
 					item.isEmpty = false
 				}
 				for _, attr := range e.Attr {
-					data["@"+newName(x.namespace, &attr.Name)] = attr.Value
+					data["@"+newName(x.namespaces, &attr.Name)] = attr.Value
 				}
 			}
 			// upgrade parent if it is empty or a value
