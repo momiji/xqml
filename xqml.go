@@ -39,20 +39,21 @@ func NewXQML() *Xqml {
 	}
 }
 
-// Attributes allows to keep attributes.
-// Default is to keep attributes, use Attributes(false) to remove them.
-func (x *Xqml) Attributes(b bool) {
+// SetReadAttributes allows to keep attributes.
+// Default is to keep attributes, use SetReadAttributes(false) to remove them.
+func (x *Xqml) SetReadAttributes(b bool) {
 	x.attributes = b
 }
 
-// Namespace allows to keep namespaces.
-// Default is to keep namespaces, use Namespace(false) to remove them.
-func (x *Xqml) Namespace(b bool) {
+// SetReadNamespace allows to keep namespaces.
+// Default is to keep namespaces, use SetReadNamespace(false) to remove them.
+func (x *Xqml) SetReadNamespace(b bool) {
 	x.namespace = b
 }
 
-// ForceList allows to ensure some elements are parsed as slice, even when only one element is present.
-func (x *Xqml) ForceList(s ...string) {
+// SetReadForceList allows to ensure some elements are parsed as slice, even when only one element is present.
+// Use "x" for element name at any path, or "r.x" path. Also supports multiple commma separated paths at once, like "a.b,a.c,d".
+func (x *Xqml) SetReadForceList(s ...string) {
 	if x.forceList == nil {
 		x.forceList = make(map[string]bool)
 	}
@@ -63,42 +64,42 @@ func (x *Xqml) ForceList(s ...string) {
 	}
 }
 
-// Html allows to manage HTML content, by auto-closing known HTML tags.
+// SetReadHtml allows to manage HTML content, by auto-closing known HTML tags.
 // Default is to not manage HTML content.
-func (x *Xqml) Html(b bool) {
+func (x *Xqml) SetReadHtml(b bool) {
 	x.html = b
 }
 
-// Root allows to set default element tag name in <root>...</root>.
+// SetWriteRoot allows to set default element tag name in <root>...</root>.
 // It used only with WriteXml(value).
-func (x *Xqml) Root(s string) {
+func (x *Xqml) SetWriteRoot(s string) {
 	x.root = s
 }
 
-// Element allows to set default element tag name in <root><element>...</element></root>.
+// SetWriteElement allows to set default element tag name in <root><element>...</element></root>.
 // It used only with WriteXml([]value).
-func (x *Xqml) Element(s string) {
+func (x *Xqml) SetWriteElement(s string) {
 	x.element = s
 }
 
-// Indent allows to set indent string. Use "" for compact write.
-func (x *Xqml) Indent(s string) {
+// SetWriteIndent allows to set indent string. Use "" for compact write.
+func (x *Xqml) SetWriteIndent(s string) {
 	x.indent = s
 }
 
-// Encoder allows to set a customer xml encoder.
-func (x *Xqml) Encoder(e *xml.Encoder) {
+// SetWriteEncoder allows to set a customer xml encoder.
+func (x *Xqml) SetWriteEncoder(e *xml.Encoder) {
 	x.encoder = e
 }
 
-// Decoder allows to set a customer xml decoder.
+// SetReadDecoder allows to set a customer xml decoder.
 // Default decoder has Strict = true and Entity = xml.HTMLEntity.
-func (x *Xqml) Decoder(e *xml.Decoder) {
+func (x *Xqml) SetReadDecoder(e *xml.Decoder) {
 	x.decoder = e
 }
 
-// Partial allow to call ParseXml multiple times and return multiple XML files
-func (x *Xqml) Partial(b bool) {
+// SetReadPartials allow to call ParseXml multiple times and return multiple XML files
+func (x *Xqml) SetReadPartials(b bool) {
 	x.partial = b
 }
 
@@ -114,8 +115,7 @@ func (x *Xqml) ParseXml(reader io.Reader, cast bool) (map[string]any, error) {
 	}
 	root := make(map[string]any)
 	curr := elem{data: root, name: "", path: ""}
-	parent := curr
-	err := x.parse(&curr, &parent, cast)
+	err := x.parse(&curr, nil, cast)
 	if err != nil {
 		return nil, err
 	}

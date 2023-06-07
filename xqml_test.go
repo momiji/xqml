@@ -2,7 +2,6 @@ package xqml
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 	"testing"
 )
@@ -39,6 +38,7 @@ func Test_Parse(t *testing.T) {
 	// force list
 	testParse(t, `<r><e>1</e></r>`, `{"r":{"e":[1]}}`, "", true, false, []string{"e"}, false)
 	testParse(t, `<r><e>1</e></r>`, `{"r":{"e":[1]}}`, "", true, false, []string{"r.e"}, false)
+	testParse(t, `<r>y<e>1</e>x</r>`, `{"r":{"#text":"yx","e":[1]}}`, `<r>yx<e>1</e></r>`, true, false, []string{"r.e"}, false)
 	// null
 	testParse(t, `<r><e></e></r>`, `{"r":{"e":null}}`, "", true, false, nil, false)
 	testParse(t, `<r><e></e><e>1</e></r>`, `{"r":{"e":[null,1]}}`, "", true, false, nil, false)
@@ -50,39 +50,62 @@ func Test_Parse(t *testing.T) {
 	testParse(t, `<r>1</r>\n   \n   `, `{"r":1}`, `<r>1</r>`, true, false, nil, false)
 	// html
 	testParse(t, `<r><e>1<br>2</e></r>`, `{"r":{"e":{"#text":"1 2","br":null}}}`, `<r><e>1 2<br></br></e></r>`, true, false, nil, true)
+	testParse(t, `<r><e>1<br>2</e></r>`, `{"r":{"e":[{"#text":"1 2","br":null}]}}`, `<r><e>1 2<br></br></e></r>`, true, false, []string{"r.e"}, true)
 }
 
 func testParse(t *testing.T, src string, rjson string, rxml string, keepAttrs bool, keepNs bool, forceList []string, html bool) {
 	x := NewXQML()
-	x.Attributes(keepAttrs)
-	x.Namespace(keepNs)
-	x.ForceList(forceList...)
-	x.Html(html)
+	x.SetReadAttributes(keepAttrs)
+	x.SetReadNamespace(keepNs)
+	x.SetReadForceList(forceList...)
+	x.SetReadHtml(html)
 	//
-	fmt.Printf("XML => JSON: %s => %s\n", src, rjson)
+	t.Logf("")
+	t.Logf("xml => json: %s => %s\n", src, rjson)
 	src = strings.ReplaceAll(src, "\\n", "\n")
 	reader := strings.NewReader(src)
 	json, err := x.ParseXml(reader, true)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Errorf("ERROR: %v", err)
 	}
 	src = strings.ReplaceAll(src, "\n", "\\n")
 	res := Stringify(json)
 	if rjson != res {
-		t.Errorf("received %s\n", res)
+		t.Errorf("ERROR: received %s\n", res)
 	}
 	//
 	if rxml == "" {
 		rxml = src
 	}
-	fmt.Printf("JSON => XML: %s => %s\n", rjson, rxml)
+	t.Logf("json => xml: %s => %s\n", rjson, rxml)
 	writer := new(bytes.Buffer)
 	err = x.WriteXml(writer, json)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Errorf("ERROR: %v", err)
 	}
 	res = writer.String()
 	if rxml != res {
-		t.Errorf("received %s\n", res)
+		t.Errorf("ERROR: received %s\n", res)
 	}
+}
+
+func Test_Simple(t *testing.T) {
+	src := `<r><e>1<br>2</e></r>`
+	xq := NewXQML()
+	xq.SetReadForceList("r.e")
+	xq.SetReadHtml(true)
+	// parse
+	reader := strings.NewReader(src)
+	json, err := xq.ParseXml(reader, true)
+	if err != nil {
+		t.Errorf("ERROR: %v\n", err)
+	}
+	t.Logf("%s", Stringify(json))
+	// write
+	writer := new(bytes.Buffer)
+	err = xq.WriteXml(writer, json)
+	if err != nil {
+		t.Errorf("ERROR: %v\n", err)
+	}
+	t.Logf("%s", writer.String())
 }
