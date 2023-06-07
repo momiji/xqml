@@ -12,7 +12,7 @@ type tag struct {
 	value any
 }
 
-var emptyAttrs = []xml.Attr{}
+var emptyAttrs []xml.Attr
 
 func (x *Xqml) write(value any, parent string) error {
 	switch value.(type) {
