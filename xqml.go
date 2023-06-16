@@ -133,7 +133,7 @@ func (x *Xqml) WriteXml(writer io.Writer, value any) error {
 		}
 		x.encoder = encoder
 	}
-	err := x.write(value, "")
+	err := x.write(value)
 	if err != nil {
 		return err
 	}
@@ -143,4 +143,13 @@ func (x *Xqml) WriteXml(writer io.Writer, value any) error {
 func Stringify(v any) string {
 	s, _ := json.Marshal(v)
 	return string(s)
+}
+
+func ToJson(b []byte) (map[string]any, error) {
+	var v map[string]any
+	err := json.Unmarshal(b, &v)
+	if err != nil {
+		return nil, err
+	}
+	return v, nil
 }

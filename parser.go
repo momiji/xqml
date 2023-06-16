@@ -148,7 +148,7 @@ func (x *Xqml) upgradeValue(curr *elem, parent *elem) {
 		curr.data = make(map[string]any)
 		curr.isEmpty = false
 		if !curr.isValue {
-			parent.data[curr.name] = curr.data
+			x.setValue(parent, curr.name, curr.path, curr.data)
 		}
 	}
 	if curr.isValue {

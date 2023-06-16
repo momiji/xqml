@@ -14,23 +14,52 @@ type tag struct {
 
 var emptyAttrs []xml.Attr
 
-func (x *Xqml) write(value any, parent string) error {
+func (x *Xqml) write(value any) error {
+	switch value.(type) {
+	case map[string]any:
+		// count number of elements
+		m := value.(map[string]any)
+		c := 0
+		key := ""
+		for k, _ := range m {
+			if !strings.HasPrefix(k, "@") && k != "#text" {
+				key = k
+				c = c + 1
+				if c == 2 {
+					break
+				}
+			}
+		}
+		if c == 0 {
+			return x.writeAny(map[string]any{x.root: value}, "")
+		} else if c == 1 {
+			value2 := m[key]
+			switch value2.(type) {
+			case []any:
+				return x.writeAny(map[string]any{x.root: value}, "")
+			default:
+				return x.writeAny(value, "")
+			}
+		} else {
+			return x.writeAny(map[string]any{x.root: map[string]any{x.element: value}}, "")
+		}
+	case []any:
+		return x.writeAny(map[string]any{x.root: map[string]any{x.element: value}}, "")
+	default:
+		return x.writeAny(map[string]any{x.root: value}, "")
+	}
+
+}
+
+func (x *Xqml) writeAny(value any, parent string) error {
 	switch value.(type) {
 	case map[string]any:
 		return x.writeMap(value.(map[string]any), parent)
 	case []any:
-		if parent == "" {
-			return x.write(map[string]any{x.root: map[string]any{x.element: value}}, "")
-		} else {
-			v := value.([]any)
-			return x.writeSlice(&v, parent)
-		}
+		v := value.([]any)
+		return x.writeSlice(&v, parent)
 	default:
-		if parent == "" {
-			return x.write(map[string]any{x.root: value}, "")
-		} else {
-			return x.writeValue(value, parent)
-		}
+		return x.writeValue(value, parent)
 	}
 }
 
@@ -41,13 +70,12 @@ func (x *Xqml) writeMap(value map[string]any, parent string) error {
 	var text any
 	//var text any
 	for k, v := range value {
-		sk := string(k)
-		if strings.HasPrefix(sk, "@") {
-			attrs = append(attrs, &tag{sk[1:], v})
-		} else if sk == "#text" {
+		if strings.HasPrefix(k, "@") {
+			attrs = append(attrs, &tag{k[1:], v})
+		} else if k == "#text" {
 			text = v
 		} else {
-			elems = append(elems, &tag{sk, v})
+			elems = append(elems, &tag{k, v})
 		}
 	}
 	// remove root unexpected values
@@ -56,10 +84,10 @@ func (x *Xqml) writeMap(value map[string]any, parent string) error {
 	}
 	// sorts tags and elems
 	sort.Slice(attrs, func(i, j int) bool {
-		return strings.Compare(attrs[i].name, attrs[j].name) > 0
+		return strings.Compare(attrs[i].name, attrs[j].name) < 0
 	})
 	sort.Slice(elems, func(i, j int) bool {
-		return strings.Compare(elems[i].name, elems[j].name) > 0
+		return strings.Compare(elems[i].name, elems[j].name) < 0
 	})
 	// start
 	name := xml.Name{Local: parent}
@@ -82,7 +110,7 @@ func (x *Xqml) writeMap(value map[string]any, parent string) error {
 	}
 	// content
 	for _, e := range elems {
-		err = x.write(e.value, e.name)
+		err = x.writeAny(e.value, e.name)
 		if err != nil {
 			return err
 		}
@@ -99,7 +127,7 @@ func (x *Xqml) writeMap(value map[string]any, parent string) error {
 }
 func (x *Xqml) writeSlice(value *[]any, parent string) error {
 	for _, a := range *value {
-		err := x.write(a, parent)
+		err := x.writeAny(a, parent)
 		if err != nil {
 			return err
 		}
