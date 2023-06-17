@@ -44,6 +44,9 @@ func Test_JsonAuto(t *testing.T) {
 		}
 		//
 		ee1 := ee
+		if ee1 == "[]" {
+			ee1 = "null"
+		}
 		ee1 = regexp.MustCompile("\\[([0-9]+)]").ReplaceAllString(ee1, "$1")
 		ee1 = regexp.MustCompile("\\[({[^{]+})]").ReplaceAllString(ee1, "$1")
 		ee1 = strings.ReplaceAll(ee1, `,"a":[]`, "")
