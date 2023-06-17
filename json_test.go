@@ -10,8 +10,8 @@ import (
 	"testing"
 )
 
-func Test_ParseAuto(t *testing.T) {
-	f, err := os.Create("xqml_auto_test.txt")
+func Test_JsonAuto(t *testing.T) {
+	f, err := os.Create("json_result.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +94,7 @@ func cgen(lvl int, withA bool, recv func(any)) {
 		})
 	}
 	// send map of #text @t @u a b
-	for _, e := range comb("#text", "@t", "@u", "a", "b") {
+	for _, e := range comb(99, "#text", "@t", "@u", "a", "b") {
 		m := make(map[string]any)
 		x := ""
 		y := ""
@@ -130,8 +130,9 @@ func cgen(lvl int, withA bool, recv func(any)) {
 	}
 }
 
-func comb(a ...string) [][]string {
+func comb(max int, a ...string) [][]string {
 	res := make([][]string, 0)
+	done := map[string]bool{}
 	for i := 1; i < 1<<len(a); i++ {
 		r := make([]string, 0)
 		for j := 0; j < len(a); j++ {
@@ -139,7 +140,13 @@ func comb(a ...string) [][]string {
 				r = append(r, a[j])
 			}
 		}
-		res = append(res, r)
+		if len(r) <= max {
+			d := strings.Join(r, " ")
+			if _, isDone := done[d]; !isDone {
+				res = append(res, r)
+				done[d] = true
+			}
+		}
 	}
 	return res
 }
