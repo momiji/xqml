@@ -108,8 +108,11 @@ func Test_Write(t *testing.T) {
 	testWrite(t, `{"a":1}`, `<a>1</a>`, ``, true, false, nil, true)
 	testWrite(t, `{"a":[1]}`, `<root><a>1</a></root>`, `{"root":{"a":1}}`, true, false, nil, true)
 	testWrite(t, `{"a":[1,2]}`, `<root><a>1</a><a>2</a></root>`, `{"root":{"a":[1,2]}}`, true, false, nil, true)
-	testWrite(t, `{"a":1,"b":2}`, `<root><element><a>1</a><b>2</b></element></root>`, `{"root":{"element":{"a":1,"b":2}}}`, true, false, nil, true)
+	testWrite(t, `{"a":1,"b":2}`, `<root><a>1</a><b>2</b></root>`, `{"root":{"a":1,"b":2}}`, true, false, nil, true)
 	testWrite(t, `{"a":1,"a":2}`, `<a>2</a>`, `{"a":2}`, true, false, nil, true)
+	testWrite(t, `{"#text":"1","a":2}`, `<root>1<a>2</a></root>`, `{"root":{"#text":1,"a":2}}`, true, false, nil, true)
+	testWrite(t, `{"@u":"1","a":2}`, `<root u="1"><a>2</a></root>`, `{"root":{"@u":"1","a":2}}`, true, false, nil, true)
+	testWrite(t, `{"#text":"1","a":2,"@u":"3"}`, `<root u="3">1<a>2</a></root>`, `{"root":{"#text":1,"@u":"3","a":2}}`, true, false, nil, true)
 }
 func testWrite(t *testing.T, src string, rxml string, rjson string, keepAttrs bool, keepNs bool, forceList []string, html bool) {
 	//

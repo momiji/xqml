@@ -114,7 +114,7 @@ func (x *Xqml) ParseXml(reader io.Reader, cast bool) (map[string]any, error) {
 		x.decoder = decoder
 	}
 	root := make(map[string]any)
-	curr := elem{data: root, name: "", path: ""}
+	curr := elem{data: root, content: ContentObject}
 	err := x.parse(&curr, nil, cast)
 	if err != nil {
 		return nil, err

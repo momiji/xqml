@@ -20,17 +20,19 @@ func (x *Xqml) write(value any) error {
 		// count number of elements
 		m := value.(map[string]any)
 		c := 0
+		d := false
 		key := ""
-		for k, _ := range m {
+		for k := range m {
 			if !strings.HasPrefix(k, "@") && k != "#text" {
 				key = k
 				c = c + 1
-				if c == 2 {
-					break
-				}
+			} else {
+				d = true
 			}
 		}
 		if c == 0 {
+			return x.writeAny(map[string]any{x.root: value}, "")
+		} else if c == 1 && d {
 			return x.writeAny(map[string]any{x.root: value}, "")
 		} else if c == 1 {
 			value2 := m[key]
@@ -41,7 +43,7 @@ func (x *Xqml) write(value any) error {
 				return x.writeAny(value, "")
 			}
 		} else {
-			return x.writeAny(map[string]any{x.root: map[string]any{x.element: value}}, "")
+			return x.writeAny(map[string]any{x.root: value}, "")
 		}
 	case []any:
 		return x.writeAny(map[string]any{x.root: map[string]any{x.element: value}}, "")
@@ -101,7 +103,7 @@ func (x *Xqml) writeMap(value map[string]any, parent string) error {
 			return err
 		}
 		if text != nil {
-			cdata := xml.CharData([]byte(fmt.Sprintf("%v", text)))
+			cdata := xml.CharData(fmt.Sprintf("%v", text))
 			err = x.encoder.EncodeToken(cdata)
 			if err != nil {
 				return err
@@ -163,7 +165,7 @@ func (x *Xqml) writeText(value any) error {
 	if value == nil {
 		return nil
 	}
-	cdata := xml.CharData([]byte(fmt.Sprintf("%v", value)))
+	cdata := xml.CharData(fmt.Sprintf("%v", value))
 	return x.encoder.EncodeToken(cdata)
 }
 
