@@ -69,13 +69,12 @@ func (x *Decoder) setForceList() {
 // See the documentation for Unmarshal for details about the
 // conversion of XML into a Go value.
 func (x *Decoder) Decode(v any) error {
-	// convert pointer
-	var ptr *map[string]any
+	// check input value is a valid pointer
 	switch v.(type) {
+	case *any:
 	case *map[string]any:
-		ptr = v.(*map[string]any)
 	default:
-		return fmt.Errorf("invalid argument, must be a *map[string]any")
+		return fmt.Errorf("invalid argument, must be a *map[string]any or *any")
 	}
 	// initialize
 	if !x.initialized {
@@ -93,8 +92,11 @@ func (x *Decoder) Decode(v any) error {
 		return err
 	}
 	// set return value
-	if ptr != nil {
-		*ptr = root
+	switch v.(type) {
+	case *any:
+		*(v.(*any)) = root
+	case *map[string]any:
+		*(v.(*map[string]any)) = root
 	}
 	// return
 	if x.Partials && len(root) == 0 {
