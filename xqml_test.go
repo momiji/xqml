@@ -22,11 +22,13 @@ func Test_Parse(t *testing.T) {
 	// bool
 	testParse(t, `<r><e>true</e></r>`, `{"r":{"e":true}}`, "", "", true, false, nil, false)
 	testParse(t, `<r><e>True</e></r>`, `{"r":{"e":true}}`, `<r><e>true</e></r>`, "", true, false, nil, false)
+	testParse(t, `<r><e>TRUE</e></r>`, `{"r":{"e":true}}`, `<r><e>true</e></r>`, "", true, false, nil, false)
 	testParse(t, `<r><e>false</e></r>`, `{"r":{"e":false}}`, "", "", true, false, nil, false)
 	testParse(t, `<r><e>False</e></r>`, `{"r":{"e":false}}`, `<r><e>false</e></r>`, "", true, false, nil, false)
+	testParse(t, `<r><e>FALSE</e></r>`, `{"r":{"e":false}}`, `<r><e>false</e></r>`, "", true, false, nil, false)
 	// invalid bool
-	testParse(t, `<r><e>TRUE</e></r>`, `{"r":{"e":"TRUE"}}`, "", "", true, false, nil, false)
-	testParse(t, `<r><e>FALSE</e></r>`, `{"r":{"e":"FALSE"}}`, "", "", true, false, nil, false)
+	testParse(t, `<r><e>TrUE</e></r>`, `{"r":{"e":"TrUE"}}`, "", "", true, false, nil, false)
+	testParse(t, `<r><e>FaLSE</e></r>`, `{"r":{"e":"FaLSE"}}`, "", "", true, false, nil, false)
 	// mixed bool
 	testParse(t, `<r>true<e>1</e></r>`, `{"r":{"#text":true,"e":1}}`, "", "", true, false, nil, false)
 	testParse(t, `<r>true<e>1</e>y</r>`, `{"r":{"#text":"truey","e":1}}`, `<r>truey<e>1</e></r>`, "", true, false, nil, false)
@@ -51,6 +53,8 @@ func Test_Parse(t *testing.T) {
 	// html
 	testParse(t, `<r><e>1<br>2</e></r>`, `{"r":{"e":{"#text":"1 2","br":null}}}`, `<r><e>1 2<br></br></e></r>`, "", true, false, nil, true)
 	testParse(t, `<r><e>1<br>2</e></r>`, `{"r":{"e":[{"#text":"1 2","br":null}]}}`, `<r><e>1 2<br></br></e></r>`, "", true, false, []string{"r.e"}, true)
+	// float
+	testParse(t, `<r>1.001</r>`, `{"r":1.001}`, "", "", true, false, nil, false)
 }
 
 func testParse(t *testing.T, src string, rjson string, rxml string, rjson2 string, keepAttrs bool, keepNs bool, forceList []string, html bool) {

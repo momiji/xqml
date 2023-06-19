@@ -206,10 +206,10 @@ func castValue(s string) any {
 	}
 	if len(s) == 4 || len(s) == 5 {
 		switch s {
-		case "true", "True", "false", "False":
-			if b, err := strconv.ParseBool(s); err == nil {
-				return b
-			}
+		case "true", "True", "TRUE":
+			return true
+		case "false", "False", "FALSE":
+			return false
 		}
 	}
 	return s
