@@ -14,7 +14,7 @@ type tag struct {
 
 var emptyAttrs []xml.Attr
 
-func (x *Xqml) write(value any) error {
+func (x *Encoder) write(value any) error {
 	switch value.(type) {
 	case map[string]any:
 		// count number of elements
@@ -31,29 +31,29 @@ func (x *Xqml) write(value any) error {
 			}
 		}
 		if c == 0 {
-			return x.writeAny(map[string]any{x.root: value}, "")
+			return x.writeAny(map[string]any{x.Root: value}, "")
 		} else if c == 1 && d {
-			return x.writeAny(map[string]any{x.root: value}, "")
+			return x.writeAny(map[string]any{x.Root: value}, "")
 		} else if c == 1 {
 			value2 := m[key]
 			switch value2.(type) {
 			case []any:
-				return x.writeAny(map[string]any{x.root: value}, "")
+				return x.writeAny(map[string]any{x.Root: value}, "")
 			default:
 				return x.writeAny(value, "")
 			}
 		} else {
-			return x.writeAny(map[string]any{x.root: value}, "")
+			return x.writeAny(map[string]any{x.Root: value}, "")
 		}
 	case []any:
-		return x.writeAny(map[string]any{x.root: map[string]any{x.element: value}}, "")
+		return x.writeAny(map[string]any{x.Root: map[string]any{x.Element: value}}, "")
 	default:
-		return x.writeAny(map[string]any{x.root: value}, "")
+		return x.writeAny(map[string]any{x.Root: value}, "")
 	}
 
 }
 
-func (x *Xqml) writeAny(value any, parent string) error {
+func (x *Encoder) writeAny(value any, parent string) error {
 	switch value.(type) {
 	case map[string]any:
 		return x.writeMap(value.(map[string]any), parent)
@@ -65,7 +65,7 @@ func (x *Xqml) writeAny(value any, parent string) error {
 	}
 }
 
-func (x *Xqml) writeMap(value map[string]any, parent string) error {
+func (x *Encoder) writeMap(value map[string]any, parent string) error {
 	var err error
 	var attrs []*tag
 	var elems []*tag
@@ -127,7 +127,7 @@ func (x *Xqml) writeMap(value map[string]any, parent string) error {
 	}
 	return nil
 }
-func (x *Xqml) writeSlice(value *[]any, parent string) error {
+func (x *Encoder) writeSlice(value *[]any, parent string) error {
 	for _, a := range *value {
 		err := x.writeAny(a, parent)
 		if err != nil {
@@ -137,7 +137,7 @@ func (x *Xqml) writeSlice(value *[]any, parent string) error {
 	return nil
 }
 
-func (x *Xqml) writeValue(value any, parent string) error {
+func (x *Encoder) writeValue(value any, parent string) error {
 	name := xml.Name{Local: parent}
 	start := xml.StartElement{
 		Name: name,
@@ -161,7 +161,7 @@ func (x *Xqml) writeValue(value any, parent string) error {
 	return nil
 }
 
-func (x *Xqml) writeText(value any) error {
+func (x *Encoder) writeText(value any) error {
 	if value == nil {
 		return nil
 	}

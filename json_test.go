@@ -1,7 +1,6 @@
 package xqml
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"reflect"
@@ -21,19 +20,15 @@ func Test_JsonAuto(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		x := newXqml(true, true, nil, true)
-		w := new(bytes.Buffer)
-		err = x.WriteXml(w, e)
+		ww, err := encode(e)
 		if err != nil {
 			t.Fatal(err)
 		}
-		ww := w.String()
 		_, err = f.WriteString(fmt.Sprintf("=> %s\n", ww))
 		if err != nil {
 			t.Fatal(err)
 		}
-		x = newXqml(true, true, nil, true)
-		r, err := x.ParseXml(strings.NewReader(ww), true)
+		r, err := decode(ww, true, true, nil, true)
 		if err != nil {
 			t.Fatal(err)
 		}

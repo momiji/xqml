@@ -1,7 +1,6 @@
 package xqml
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"strings"
@@ -23,8 +22,8 @@ func Test_XmlAuto(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		x := newXqml(true, true, nil, true)
-		r, err := x.ParseXml(strings.NewReader(e), true)
+
+		r, err := decode(e, true, true, nil, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -33,13 +32,10 @@ func Test_XmlAuto(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		x = newXqml(true, true, nil, true)
-		w := new(bytes.Buffer)
-		err = x.WriteXml(w, r)
+		ww, err := encode(r)
 		if err != nil {
 			t.Fatal(err)
 		}
-		ww := w.String()
 		_, err = f.WriteString(fmt.Sprintf("=> %s\n", ww))
 		if err != nil {
 			t.Fatal(err)

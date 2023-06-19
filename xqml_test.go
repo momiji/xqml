@@ -18,7 +18,7 @@ func Test_Parse(t *testing.T) {
 	// level2 simple
 	testParse(t, `<r><e>1</e></r>`, `{"r":{"e":1}}`, "", "", true, false, nil, false)
 	// mixed #text
-	testParse(t, `<r>y<e>1</e>x</r>`, `{"r":{"#text":"yx","e":1}}`, `<r>yx<e>1</e></r>`, "", true, false, nil, false)
+	testParse(t, `<r>y<e>1</e>x</r>`, `{"r":{"#text":"y x","e":1}}`, `<r>y x<e>1</e></r>`, "", true, false, nil, false)
 	// bool
 	testParse(t, `<r><e>true</e></r>`, `{"r":{"e":true}}`, "", "", true, false, nil, false)
 	testParse(t, `<r><e>True</e></r>`, `{"r":{"e":true}}`, `<r><e>true</e></r>`, "", true, false, nil, false)
@@ -31,16 +31,16 @@ func Test_Parse(t *testing.T) {
 	testParse(t, `<r><e>FaLSE</e></r>`, `{"r":{"e":"FaLSE"}}`, "", "", true, false, nil, false)
 	// mixed bool
 	testParse(t, `<r>true<e>1</e></r>`, `{"r":{"#text":true,"e":1}}`, "", "", true, false, nil, false)
-	testParse(t, `<r>true<e>1</e>y</r>`, `{"r":{"#text":"truey","e":1}}`, `<r>truey<e>1</e></r>`, "", true, false, nil, false)
+	testParse(t, `<r>true<e>1</e>y</r>`, `{"r":{"#text":"true y","e":1}}`, `<r>true y<e>1</e></r>`, "", true, false, nil, false)
 	// xml declaration
 	testParse(t, `<?xml version="1.0"?><r>1</r>`, `{"r":1}`, `<r>1</r>`, "", true, false, nil, false)
 	// array
 	testParse(t, `<r><e>1</e><e>2</e></r>`, `{"r":{"e":[1,2]}}`, "", "", true, false, nil, false)
-	testParse(t, `<r>y<e>1</e><e>2</e>x</r>`, `{"r":{"#text":"yx","e":[1,2]}}`, `<r>yx<e>1</e><e>2</e></r>`, "", true, false, nil, false)
+	testParse(t, `<r>y<e>1</e><e>2</e>x</r>`, `{"r":{"#text":"y x","e":[1,2]}}`, `<r>y x<e>1</e><e>2</e></r>`, "", true, false, nil, false)
 	// force list
 	testParse(t, `<r><e>1</e></r>`, `{"r":{"e":[1]}}`, "", "", true, false, []string{"e"}, false)
 	testParse(t, `<r><e>1</e></r>`, `{"r":{"e":[1]}}`, "", "", true, false, []string{"r.e"}, false)
-	testParse(t, `<r>y<e>1</e>x</r>`, `{"r":{"#text":"yx","e":[1]}}`, `<r>yx<e>1</e></r>`, "", true, false, []string{"r.e"}, false)
+	testParse(t, `<r>y<e>1</e>x</r>`, `{"r":{"#text":"y x","e":[1]}}`, `<r>y x<e>1</e></r>`, "", true, false, []string{"r.e"}, false)
 	// null
 	testParse(t, `<r><e></e></r>`, `{"r":{"e":null}}`, "", "", true, false, nil, false)
 	testParse(t, `<r><e></e><e>1</e></r>`, `{"r":{"e":[null,1]}}`, "", "", true, false, nil, false)
@@ -62,8 +62,7 @@ func testParse(t *testing.T, src string, rjson string, rxml string, rjson2 strin
 	t.Logf("")
 	t.Logf("xml => json: %s => %s\n", src, rjson)
 	src = strings.ReplaceAll(src, "\\n", "\n")
-	reader := strings.NewReader(src)
-	j, err := newXqml(keepAttrs, keepNs, forceList, html).ParseXml(reader, true)
+	j, err := decode(src, keepAttrs, keepNs, forceList, html)
 	if err != nil {
 		t.Errorf("ERROR: %v", err)
 	}
@@ -77,19 +76,16 @@ func testParse(t *testing.T, src string, rjson string, rxml string, rjson2 strin
 		rxml = src
 	}
 	t.Logf("json => xml: %s => %s\n", rjson, rxml)
-	writer := new(bytes.Buffer)
-	err = newXqml(keepAttrs, keepNs, forceList, html).WriteXml(writer, j)
+	res, err = encode(j)
 	if err != nil {
 		t.Errorf("ERROR: %v", err)
 	}
-	res = writer.String()
 	if rxml != res {
 		t.Errorf("ERROR: received %s\n", res)
 	}
 	//
 	t.Logf("xml => json: %s => %s\n", res, rjson)
-	reader = strings.NewReader(res)
-	j, err = newXqml(keepAttrs, keepNs, forceList, html).ParseXml(reader, true)
+	j, err = decode(res, keepAttrs, keepNs, forceList, html)
 	if err != nil {
 		t.Errorf("ERROR: %v", err)
 	}
@@ -127,12 +123,10 @@ func testWrite(t *testing.T, src string, rxml string, rjson string, keepAttrs bo
 	if err != nil {
 		t.Errorf("ERROR: %v", err)
 	}
-	writer := new(bytes.Buffer)
-	err = newXqml(keepAttrs, keepNs, forceList, html).WriteXml(writer, v)
+	res, err := encode(v)
 	if err != nil {
 		t.Errorf("ERROR: %v", err)
 	}
-	res := writer.String()
 	if res != rxml {
 		t.Errorf("ERROR: received %s\n", res)
 	}
@@ -141,8 +135,7 @@ func testWrite(t *testing.T, src string, rxml string, rjson string, keepAttrs bo
 		rjson = src
 	}
 	t.Logf("xml => json: %s => %s\n", rxml, rjson)
-	reader := strings.NewReader(rxml)
-	j, err := newXqml(keepAttrs, keepNs, forceList, html).ParseXml(reader, true)
+	j, err := decode(rxml, keepAttrs, keepNs, forceList, html)
 	if err != nil {
 		t.Errorf("ERROR: %v", err)
 	}
@@ -155,26 +148,40 @@ func testWrite(t *testing.T, src string, rxml string, rjson string, keepAttrs bo
 func Test_Simple(t *testing.T) {
 	src := `<r><e>1<br>2</e></r>`
 	// parse
-	reader := strings.NewReader(src)
-	json, err := newXqml(true, true, []string{"r.e"}, true).ParseXml(reader, true)
+	json, err := decode(src, true, true, []string{"r.e"}, true)
 	if err != nil {
 		t.Errorf("ERROR: %v\n", err)
 	}
 	t.Logf("%s", Stringify(json))
 	// write
-	writer := new(bytes.Buffer)
-	err = newXqml(true, true, []string{"r.e"}, true).WriteXml(writer, json)
+	res, err := encode(json)
 	if err != nil {
 		t.Errorf("ERROR: %v\n", err)
 	}
-	t.Logf("%s", writer.String())
+	t.Logf("%s", res)
 }
 
-func newXqml(keepAttrs bool, keepNs bool, forceList []string, html bool) *Xqml {
-	x := NewXQML()
-	x.SetReadAttributes(keepAttrs)
-	x.SetReadNamespaces(keepNs)
-	x.SetReadForceList(forceList...)
-	x.SetReadHtml(html)
-	return x
+func encode(value any) (string, error) {
+	writer := new(bytes.Buffer)
+	x := NewEncoder(writer)
+	err := x.Encode(value)
+	if err != nil {
+		return "", err
+	}
+	return writer.String(), nil
+}
+
+func decode(value string, keepAttrs bool, keepNs bool, forceList []string, html bool) (any, error) {
+	reader := strings.NewReader(value)
+	x := NewDecoder(reader)
+	x.Attributes = keepAttrs
+	x.Namespaces = keepNs
+	x.ForceList = forceList
+	x.Html = html
+	var v map[string]any
+	err := x.Decode(&v)
+	if err != nil {
+		return nil, err
+	}
+	return v, nil
 }

@@ -21,7 +21,7 @@ type elem struct {
 	content int
 }
 
-func (x *Xqml) parse(curr *elem, parent *elem, cast bool) error {
+func (x *Decoder) parse(curr *elem, parent *elem) error {
 	for {
 		token, err := x.decoder.Token()
 		// on error, check EOF
@@ -41,18 +41,18 @@ func (x *Xqml) parse(curr *elem, parent *elem, cast bool) error {
 			}
 			// create new element
 			var data map[string]any
-			name := newName(x.namespaces, &e.Name)
+			name := newName(x.Namespaces, &e.Name)
 			path := newPath(curr.path, name)
 			item := &elem{data, name, path, ContentNone}
 			// read attributes
-			if x.attributes {
+			if x.Attributes {
 				if len(e.Attr) > 0 {
 					data = make(map[string]any)
 					item.data = data
 					item.content = ContentObject
 				}
 				for _, attr := range e.Attr {
-					data["@"+newName(x.namespaces, &attr.Name)] = attr.Value
+					data["@"+newName(x.Namespaces, &attr.Name)] = attr.Value
 				}
 			}
 			// upgrade parent if it is empty or a value
@@ -60,12 +60,12 @@ func (x *Xqml) parse(curr *elem, parent *elem, cast bool) error {
 			// set value
 			x.addValue(curr, name, path, data)
 			// recursive call
-			err = x.parse(item, curr, cast)
+			err = x.parse(item, curr)
 			if err != nil {
 				return err
 			}
 			if curr.path == "" {
-				if x.partial {
+				if x.Partials {
 					return nil
 				} else {
 					x.done = true
@@ -81,7 +81,7 @@ func (x *Xqml) parse(curr *elem, parent *elem, cast bool) error {
 					return fmt.Errorf("invalid XML chardata '%s' found for non-partial parse", cdata)
 				}
 				value := any(cdata)
-				if cast {
+				if x.Cast {
 					value = castValue(cdata)
 				}
 				x.setText(curr, parent, value)
@@ -90,7 +90,7 @@ func (x *Xqml) parse(curr *elem, parent *elem, cast bool) error {
 	}
 }
 
-func (x *Xqml) getValue(item *elem, name string) any {
+func (x *Decoder) getValue(item *elem, name string) any {
 	// if value is already set...
 	if data, isMap := item.data[name]; isMap {
 		// if value is a slice, return last item
@@ -103,7 +103,7 @@ func (x *Xqml) getValue(item *elem, name string) any {
 	return nil
 }
 
-func (x *Xqml) setValue(item *elem, name string, path string, value any) {
+func (x *Decoder) setValue(item *elem, name string, path string, value any) {
 	// if value is already set...
 	if data, isMap := item.data[name]; isMap {
 		// if value is a slice, set last item
@@ -120,7 +120,7 @@ func (x *Xqml) setValue(item *elem, name string, path string, value any) {
 	}
 }
 
-func (x *Xqml) addValue(item *elem, name string, path string, value any) {
+func (x *Decoder) addValue(item *elem, name string, path string, value any) {
 	// if value is already set => transform to slice or append to slice
 	if data, isMap := item.data[name]; isMap {
 		// if value is a slice
@@ -141,32 +141,24 @@ func (x *Xqml) addValue(item *elem, name string, path string, value any) {
 	}
 }
 
-func (x *Xqml) setText(curr *elem, parent *elem, value any) {
+func (x *Decoder) setText(curr *elem, parent *elem, value any) {
 	switch curr.content {
 	case ContentNone:
 		x.setValue(parent, curr.name, curr.path, value)
 		curr.content = ContentValue
 	case ContentValue:
 		text := x.getValue(parent, curr.name)
-		value = fmt.Sprintf("%v%s%v", text, x.getSep(), value)
+		value = fmt.Sprintf("%v%s%v", text, x.Sep, value)
 		x.setValue(parent, curr.name, curr.path, value)
 	case ContentObject:
 		if text, ok := curr.data["#text"]; ok {
-			value = fmt.Sprintf("%v%s%v", text, x.getSep(), value)
+			value = fmt.Sprintf("%v%s%v", text, x.Sep, value)
 		}
 		curr.data["#text"] = value
 	}
 }
 
-func (x *Xqml) getSep() string {
-	sep := ""
-	if x.html {
-		sep = " "
-	}
-	return sep
-}
-
-func (x *Xqml) upgradeValue(curr *elem, parent *elem) {
+func (x *Decoder) upgradeValue(curr *elem, parent *elem) {
 	switch curr.content {
 	case ContentNone:
 		curr.data = make(map[string]any)
